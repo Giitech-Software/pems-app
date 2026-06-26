@@ -25,8 +25,9 @@ export interface CreatePropertyData {
   area?: string;
   city: string;
   region?: string;
-  country: string;latitude?: number | null;
-longitude?: number | null;
+  country: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const createProperty = async (data: CreatePropertyData) => {

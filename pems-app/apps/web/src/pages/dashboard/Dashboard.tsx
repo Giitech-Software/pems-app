@@ -1,18 +1,70 @@
+import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import StatCard from "../../components/cards/StatCard";
+import { useAuth } from "../../context/AuthContext";
+import {
+  getPropertiesByOwner,
+  getBuildingsByOwner,
+  getRoomsByOwner,
+} from "../../../../../packages/firebase";
 
-const stats = [
-  { title: "Total Properties", value: "0", subtitle: "All registered properties" },
-  { title: "Total Buildings", value: "0", subtitle: "Blocks and structures" },
-  { title: "Total Rooms", value: "0", subtitle: "All rentable spaces" },
-  { title: "Occupied Rooms", value: "0", subtitle: "Currently rented" },
-  { title: "Vacant Rooms", value: "0", subtitle: "Available for rent" },
-  { title: "Active Tenants", value: "0", subtitle: "Current tenants" },
-  { title: "Monthly Revenue", value: "GHS 0", subtitle: "Expected monthly rent" },
-  { title: "Outstanding Rent", value: "GHS 0", subtitle: "Unpaid balances" },
-];
 
 export default function Dashboard() {
+  const { firebaseUser } = useAuth();
+  const [totalProperties, setTotalProperties] = useState(0);
+const [totalBuildings, setTotalBuildings] = useState(0);
+const [totalRooms, setTotalRooms] = useState(0);
+const [occupiedRooms, setOccupiedRooms] = useState(0);
+const [vacantRooms, setVacantRooms] = useState(0);
+  useEffect(() => {
+    async function loadDashboardData() {
+      if (!firebaseUser) return;
+
+     const [properties, buildings, rooms] = await Promise.all([
+  getPropertiesByOwner(firebaseUser.uid),
+  getBuildingsByOwner(firebaseUser.uid),
+  getRoomsByOwner(firebaseUser.uid),
+]);
+
+setTotalProperties(properties.length);
+setTotalBuildings(buildings.length);
+setTotalRooms(rooms.length);
+setOccupiedRooms(rooms.filter((room) => room.status === "occupied").length);
+setVacantRooms(rooms.filter((room) => room.status === "vacant").length);
+    }
+
+    loadDashboardData();
+  }, [firebaseUser]);
+
+  const stats = [
+    {
+      title: "Total Properties",
+      value: String(totalProperties),
+      subtitle: "All registered properties",
+    },
+    {
+  title: "Total Buildings",
+  value: String(totalBuildings),
+  subtitle: "Blocks and structures",
+},{
+  title: "Total Rooms",
+  value: String(totalRooms),
+  subtitle: "All rentable spaces",
+},
+{
+  title: "Occupied Rooms",
+  value: String(occupiedRooms),
+  subtitle: "Currently rented",
+},
+{
+  title: "Vacant Rooms",
+  value: String(vacantRooms),
+  subtitle: "Available for rent",
+},  { title: "Active Tenants", value: "0", subtitle: "Current tenants" },
+    { title: "Monthly Revenue", value: "GHS 0", subtitle: "Expected monthly rent" },
+    { title: "Outstanding Rent", value: "GHS 0", subtitle: "Unpaid balances" },
+  ];
+
   return (
     <DashboardLayout>
       <section>
