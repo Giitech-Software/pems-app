@@ -10,17 +10,21 @@ export default function PageHeader({
   actionLabel,
 }: PageHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-      <div>
-        <p className="text-sm font-bold tracking-[0.25em] text-amber-500">
-          P.E.M.S.
+    <div className="flex min-w-0 flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm sm:p-5 md:flex-row md:items-center md:justify-between">
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-500 sm:text-sm sm:tracking-[0.25em]">
+          PEMS
         </p>
-        <h1 className="mt-2 text-3xl font-black text-slate-950">{title}</h1>
-        <p className="mt-2 text-slate-500">{subtitle}</p>
+        <h1 className="mt-2 break-words text-2xl font-black text-slate-950 sm:text-3xl">
+          {title}
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm text-slate-500 sm:text-base">
+          {subtitle}
+        </p>
       </div>
 
       {actionLabel && (
-        <button className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700">
+        <button className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto">
           {actionLabel}
         </button>
       )}

@@ -1,0 +1,23 @@
+{
+  "name": "P.E.M.S.",
+  "short_name": "P.E.M.S.",
+  "description": "Property Engagement & Management System",
+  "icons": [
+    {
+      "src": "/favicons/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicons/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#0F172A",
+  "background_color": "#F8FAFC",
+  "display": "standalone",
+  "start_url": "/"
+}

@@ -4,6 +4,7 @@ import {
   deleteProperty,
   getPropertiesByOwner,
   updateProperty,
+  getFriendlyDataError,
 } from "../../../../../../packages/firebase";
 import type {
   Property,
@@ -47,6 +48,7 @@ export function useProperties(ownerId?: string) {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function loadProperties() {
     if (!ownerId) return;
@@ -100,6 +102,7 @@ export function useProperties(ownerId?: string) {
   if (!ownerId) return;
 
   setLoading(true);
+  setError("");
 
   try {
     const propertyData = {
@@ -126,6 +129,8 @@ export function useProperties(ownerId?: string) {
 
     resetForm();
     await loadProperties();
+  } catch (err) {
+    setError(getFriendlyDataError(err, "Could not save this property."));
   } finally {
     setLoading(false);
   }
@@ -138,8 +143,13 @@ export function useProperties(ownerId?: string) {
 
     if (!confirmed) return;
 
-    await deleteProperty(propertyId);
-    await loadProperties();
+    try {
+      setError("");
+      await deleteProperty(propertyId);
+      await loadProperties();
+    } catch (err) {
+      setError(getFriendlyDataError(err, "Could not delete this property."));
+    }
   }
 
   return {
@@ -148,6 +158,7 @@ export function useProperties(ownerId?: string) {
     editingProperty,
     showForm,
     loading,
+    error,
     updateField,
     startCreate,
     startEdit,

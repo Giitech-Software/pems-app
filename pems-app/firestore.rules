@@ -1,0 +1,244 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(userId) {
+      return get(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function currentUser() {
+      return userDoc(request.auth.uid);
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && currentUser().data.role == role;
+    }
+
+    function isSuperAdmin() {
+      return hasRole('super_admin');
+    }
+
+    function isLandlord() {
+      return hasRole('landlord');
+    }
+
+    function isPropertyManager() {
+      return hasRole('property_manager');
+    }
+
+    function owns(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function managesProperty(propertyId) {
+      return isPropertyManager()
+        && propertyId is string
+        && exists(/databases/$(database)/documents/properties/$(propertyId))
+        && request.auth.uid in get(/databases/$(database)/documents/properties/$(propertyId)).data.managerIds;
+    }
+
+    function tenantExists(tenantId) {
+      return tenantId is string
+        && exists(/databases/$(database)/documents/tenants/$(tenantId));
+    }
+
+    function tenantBelongsToUser(tenantId) {
+      return isSignedIn()
+        && tenantExists(tenantId)
+        && get(/databases/$(database)/documents/tenants/$(tenantId)).data.userId == request.auth.uid;
+    }
+
+    function paymentRequestMatchesTenant() {
+      return tenantBelongsToUser(request.resource.data.tenantId)
+        && request.resource.data.tenantUserId == request.auth.uid
+        && request.resource.data.ownerId == get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.ownerId
+        && request.resource.data.propertyId == get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.propertyId
+        && request.resource.data.buildingId == get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.buildingId
+        && request.resource.data.roomId == get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.roomId;
+    }
+
+    function canAccessConversation(conversationId) {
+      return isSignedIn()
+        && conversationId is string
+        && exists(/databases/$(database)/documents/conversations/$(conversationId))
+        && (
+          get(/databases/$(database)/documents/conversations/$(conversationId)).data.ownerId == request.auth.uid
+          || tenantBelongsToUser(get(/databases/$(database)/documents/conversations/$(conversationId)).data.tenantId)
+        );
+    }
+
+    match /system/{documentId} {
+      allow read: if documentId == 'superAdminBootstrap' || isSuperAdmin();
+      allow create: if isSignedIn()
+        && documentId == 'superAdminBootstrap'
+        && !exists(/databases/$(database)/documents/system/superAdminBootstrap);
+      allow update: if isSuperAdmin();
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isSelf(userId) || isSuperAdmin();
+      allow list: if isSuperAdmin() || resource.data.role == 'super_admin';
+      allow create: if isSelf(userId) || isSuperAdmin();
+      allow update: if isSelf(userId) || isSuperAdmin();
+      allow delete: if false;
+    }
+
+    match /userSettings/{userId} {
+      allow read, write: if isSelf(userId) || isSuperAdmin();
+    }
+
+    match /properties/{propertyId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || (isPropertyManager() && request.auth.uid in resource.data.managerIds);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /buildings/{buildingId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || managesProperty(resource.data.propertyId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /rooms/{roomId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || managesProperty(resource.data.propertyId) || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /tenants/{tenantId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || managesProperty(resource.data.propertyId) || isSelf(resource.data.userId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update: if isSuperAdmin()
+        || owns(resource.data.ownerId)
+        || (
+          isSelf(resource.data.userId)
+          && resource.data.profileUpdateAllowed == true
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['fullName', 'email', 'phone', 'occupation', 'emergencyContactName', 'emergencyContactPhone', 'updatedAt'])
+        );
+      allow delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /tenantLinkRequests/{requestId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isSuperAdmin()
+        || isSelf(resource.data.userId)
+        || (isLandlord() && resource.data.ownerEmail == currentUser().data.email);
+      allow update: if isSuperAdmin()
+        || (isLandlord() && resource.data.ownerEmail == currentUser().data.email);
+      allow delete: if isSuperAdmin()
+        || isSelf(resource.data.userId)
+        || (isLandlord() && resource.data.ownerEmail == currentUser().data.email);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || managesProperty(resource.data.propertyId) || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if false;
+    }
+
+    match /paymentRequests/{paymentRequestId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || isSelf(resource.data.tenantUserId);
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'ownerId', 'tenantId', 'tenantUserId', 'propertyId', 'buildingId', 'roomId',
+          'amount', 'currency', 'provider', 'supportedMethods', 'providerReference',
+          'notes', 'paymentPurpose', 'status', 'createdAt', 'updatedAt'
+        ])
+        && paymentRequestMatchesTenant()
+        && request.resource.data.provider == 'paystack'
+        && request.resource.data.status == 'pending_provider_setup'
+        && request.resource.data.currency == 'GHS'
+        && request.resource.data.paymentPurpose == 'rent'
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0;
+      allow update, delete: if false;
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isSuperAdmin()
+        || owns(resource.data.ownerId)
+        || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSignedIn()
+        && (
+          owns(request.resource.data.ownerId)
+          || tenantBelongsToUser(request.resource.data.tenantId)
+        );
+      allow update: if isSignedIn()
+        && (
+          owns(resource.data.ownerId)
+          || tenantBelongsToUser(resource.data.tenantId)
+        );
+      allow delete: if false;
+    }
+
+    match /messages/{messageId} {
+      allow read: if canAccessConversation(resource.data.conversationId);
+      allow create: if isSignedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && canAccessConversation(request.resource.data.conversationId);
+      allow update: if isSignedIn() && resource.data.recipientId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSuperAdmin()
+        || isSelf(resource.data.userId)
+        || owns(resource.data.ownerId);
+      allow create: if isSignedIn();
+      allow update: if isSignedIn()
+        && (isSelf(resource.data.userId) || owns(resource.data.ownerId))
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['isRead']);
+      allow delete: if false;
+    }
+
+    match /maintenanceRequests/{requestId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || managesProperty(resource.data.propertyId) || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSignedIn()
+        && (
+          owns(request.resource.data.ownerId)
+          || tenantBelongsToUser(request.resource.data.tenantId)
+        );
+      allow update: if isSuperAdmin() || owns(resource.data.ownerId);
+      allow delete: if false;
+    }
+
+    match /caretakers/{caretakerId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /utilityBills/{billId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || managesProperty(resource.data.propertyId) || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /tenancyAgreements/{agreementId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /rentSchedules/{scheduleId} {
+      allow read: if isSuperAdmin() || owns(resource.data.ownerId) || tenantBelongsToUser(resource.data.tenantId);
+      allow create: if isSuperAdmin() || owns(request.resource.data.ownerId);
+      allow update, delete: if isSuperAdmin() || owns(resource.data.ownerId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

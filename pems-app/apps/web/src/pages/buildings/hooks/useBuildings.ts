@@ -5,6 +5,7 @@ import {
   getBuildingsByOwner,
   getPropertiesByOwner,
   updateBuilding,
+  getFriendlyDataError,
 } from "../../../../../../packages/firebase";
 import type { Building, Property } from "../../../../../../packages/models";
 
@@ -27,6 +28,7 @@ export function useBuildings(ownerId?: string) {
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function loadData() {
     if (!ownerId) return;
@@ -81,6 +83,7 @@ export function useBuildings(ownerId?: string) {
     if (!ownerId) return;
 
     setLoading(true);
+    setError("");
 
     try {
       const buildingData = {
@@ -98,6 +101,8 @@ export function useBuildings(ownerId?: string) {
 
       resetForm();
       await loadData();
+    } catch (err) {
+      setError(getFriendlyDataError(err, "Could not save this building."));
     } finally {
       setLoading(false);
     }
@@ -110,8 +115,13 @@ export function useBuildings(ownerId?: string) {
 
     if (!confirmed) return;
 
-    await deleteBuilding(building.id, building.propertyId);
-    await loadData();
+    try {
+      setError("");
+      await deleteBuilding(building.id, building.propertyId);
+      await loadData();
+    } catch (err) {
+      setError(getFriendlyDataError(err, "Could not delete this building."));
+    }
   }
 
   function getPropertyName(propertyId: string) {
@@ -125,6 +135,7 @@ export function useBuildings(ownerId?: string) {
     editingBuilding,
     showForm,
     loading,
+    error,
     updateField,
     startCreate,
     startEdit,

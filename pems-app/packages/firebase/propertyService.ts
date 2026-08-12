@@ -64,6 +64,32 @@ export const getPropertiesByOwner = async (
     ...doc.data(),
   })) as Property[];
 };
+
+export const getPropertiesByManager = async (
+  managerId: string
+): Promise<Property[]> => {
+  const q = query(
+    collection(db, COLLECTIONS.PROPERTIES),
+    where("managerIds", "array-contains", managerId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((propertyDoc) => ({
+    id: propertyDoc.id,
+    ...propertyDoc.data(),
+  })) as Property[];
+};
+
+export const getAllProperties = async (): Promise<Property[]> => {
+  const snapshot = await getDocs(collection(db, COLLECTIONS.PROPERTIES));
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Property[];
+};
+
 export const deleteProperty = async (propertyId: string): Promise<void> => {
   await deleteDoc(doc(db, COLLECTIONS.PROPERTIES, propertyId));
 };

@@ -7,6 +7,7 @@ export type MaintenanceStatus =
 export interface MaintenanceRequest {
   id: string;
 
+  ownerId?: string;
   tenantId: string;
 
   propertyId: string;

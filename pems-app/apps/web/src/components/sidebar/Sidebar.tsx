@@ -6,8 +6,12 @@ import {
   DoorOpen,
   Users,
   Wallet,
+  AlertCircle,
+  MessageSquare,
   BarChart3,
   Wrench,
+  Bell,
+  UserCircle,
   Settings,
   X,
 } from "lucide-react";
@@ -24,8 +28,12 @@ const navItems = [
   { label: "Rooms", path: "/rooms", icon: DoorOpen },
   { label: "Tenants", path: "/tenants", icon: Users },
   { label: "Payments", path: "/payments", icon: Wallet },
+  { label: "Overdue Rent", path: "/overdue-rent", icon: AlertCircle },
+  { label: "Messages", path: "/messages", icon: MessageSquare },
   { label: "Reports", path: "/reports", icon: BarChart3 },
   { label: "Maintenance", path: "/maintenance", icon: Wrench },
+  { label: "Notifications", path: "/notifications", icon: Bell },
+  { label: "Profile", path: "/profile", icon: UserCircle },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
 
@@ -40,17 +48,17 @@ export default function Sidebar({ isMobileOpen, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-slate-950 text-white transition-transform duration-300 lg:static lg:min-h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 transform flex-col bg-slate-950 text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-start justify-between border-b border-white/10 px-6 py-6">
+        <div className="shrink-0 flex items-start justify-between border-b border-white/10 px-6 py-6">
           <div>
             <p className="text-xs font-bold tracking-[0.3em] text-amber-400">
-              P.E.M.S.
+              PEMS
             </p>
             <h1 className="mt-2 text-lg font-bold leading-tight">
-              Property Engagement & Management System
+              Property Engagement &amp; Management System
             </h1>
           </div>
 
@@ -62,7 +70,7 @@ export default function Sidebar({ isMobileOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="space-y-2 px-4 py-6">
+        <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-6">
           {navItems.map((item) => {
             const Icon = item.icon;
 

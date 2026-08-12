@@ -10,10 +10,20 @@ export interface User {
   fullName: string;
   email: string;
   phone?: string;
+  jobTitle?: string;
+  organizationName?: string;
 
   role: UserRole;
 
   profileImage?: string;
+  landlordEmail?: string;
+  tenantAccessApproved?: boolean;
+  subscriptionStatus?: "pending" | "active" | "suspended";
+  approvedAt?: string;
+  suspensionReason?: string;
+  lastLoginAt?: string;
+  createdBy?: string;
+  bootstrapProvisioned?: boolean;
 
   isActive: boolean;
 

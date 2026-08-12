@@ -18,5 +18,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Firebase data loading intentionally updates state from async effects.
+      "react-hooks/set-state-in-effect": "warn",
+      "react-refresh/only-export-components": "warn",
+    },
   },
 ])

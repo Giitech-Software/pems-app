@@ -12,6 +12,8 @@ export type PaymentPurpose =
   | "maintenance_fee"
   | "other";
 
+export type PaymentStatus = "pending" | "confirmed";
+
 export interface Payment {
   id: string;
 
@@ -27,6 +29,7 @@ export interface Payment {
 
   paymentPurpose: PaymentPurpose;
   paymentMethod: PaymentMethod;
+  paymentStatus?: PaymentStatus;
 
   paymentDate: string;
 
@@ -35,6 +38,12 @@ export interface Payment {
 
   referenceNumber?: string;
   receiptNumber?: string;
+  receiptIssuedAt?: string;
+
+  provider?: string;
+  providerTransactionId?: string;
+  providerReference?: string;
+  providerResponse?: string;
 
   notes?: string;
 

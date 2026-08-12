@@ -76,7 +76,7 @@ export default function PropertyForm({
 <select
   className="rounded-xl border border-slate-200 px-4 py-3 capitalize outline-none focus:border-blue-600"
   value={formData.status}
-  onChange={(e) => onChange("status", e.target.value as any)}
+  onChange={(e) => onChange("status", e.target.value as (typeof propertyStatuses)[number])}
 >
   {propertyStatuses.map((status) => (
     <option key={status} value={status}>

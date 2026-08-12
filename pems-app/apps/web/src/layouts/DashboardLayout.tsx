@@ -17,10 +17,12 @@ export default function DashboardLayout({
           onClose={() => setIsMobileSidebarOpen(false)}
         />
 
-        <section className="min-h-screen flex-1">
+        <section className="min-h-screen min-w-0 flex-1">
           <Topbar onMenuClick={() => setIsMobileSidebarOpen(true)} />
 
-          <div className="p-4 md:p-6 lg:p-8">{children}</div>
+          <div className="w-full max-w-[100vw] overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
+            {children}
+          </div>
         </section>
       </div>
     </main>
